@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<LangVersion>10</LangVersion>
+		<Version>1.0.19</Version>
+		<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+		<PackageId>ShadowViewer.Analyzer</PackageId>
+		<Authors>kitUIN</Authors>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageProjectUrl>https://github.com/kitUIN/ShadowViewer.Analyzer</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/kitUIN/ShadowViewer.Analyzer</RepositoryUrl>
+		<Description>✨ ShadowViewer Analyzer ✨</Description>
+		<PluginLang>zh-CN</PluginLang>
+		<Copyright>Copyright 2023</Copyright>
+		<PackageTags>kitUIN;wasdk;ShadowViewer;winui</PackageTags>
+		<PackageOutputPath>.</PackageOutputPath>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" PrivateAssets="all" />
+		<PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" PrivateAssets="all" />
+	</ItemGroup>
+	<ItemGroup>
+		<None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+	</ItemGroup>
+
+</Project>
