@@ -2,10 +2,7 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using ShadowViewer.Analyzer;
-using System.Reflection;
 using System.Xml.Linq;
-using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
 namespace ShadowViewer
 {
     [Generator]
@@ -30,6 +27,18 @@ namespace ShadowViewer
                 return $"{v.Major}.{v.Minor}.{v.Build}.{v.Revision}";
             }
             throw new Exception("缺少指定nuget包ShadowViewer.Core");
+        }
+        static string GetRequire(GeneratorExecutionContext context)
+        {
+            var packageReference = context.Compilation.ReferencedAssemblyNames.Where(x => x.Name.StartsWith("ShadowViewer.Plugin."));
+            var requires = new List<string>();
+            foreach(var package in packageReference)
+            {
+                var v = package.Version;
+                var name = package.Name.Replace("ShadowViewer.Plugin.", "");
+                requires.Add(@$"""{name}={v.Major}.{v.Minor}.{v.Build}.{v.Revision}""");
+            }
+            return string.Join( ";", requires);
         }
         /// <summary>
         /// 获取核心的版本号
@@ -68,13 +77,17 @@ namespace ShadowViewer
                     if(doc.Root.Element("PropertyGroup") is { } propertyGroup)
                     {
                         if (propertyGroup.Element("Version") is { } version)
+                        {
+                            if(version.Value.Split('.').Length != 4) 
+                                throw new Exception($"{fileName}文件中插件元数据版本号必须为<Version>{{Major}}.{{Minor}}.{{Build}}.{{Revision}}<Version/>");
                             meta.Version = version.Value;
+                        }
                         else
                             throw new Exception($"{fileName}文件中缺少插件元数据<Version><Version/>");
-                        if (propertyGroup.Element("PluginId") is { } id)
-                            meta.Id = id.Value;
+                        if (propertyGroup.Element("PackageId") is { } id)
+                            meta.Id = id.Value.Replace("ShadowViewer.Plugin.","");
                         else
-                            throw new Exception($"{fileName}文件中缺少插件元数据<PluginId><PluginId/>");
+                            throw new Exception(@$"{fileName}文件中缺少插件元数据<PackageId>ShadowViewer.Plugin.{{插件id}}<PackageId/>");
                         if (propertyGroup.Element("PluginLogo") is { } logo)
                             meta.Logo = logo.Value;
                         else
@@ -83,14 +96,18 @@ namespace ShadowViewer
                             meta.Name = name.Value;
                         else
                             throw new Exception($"{fileName}文件中缺少插件元数据<PluginName><PluginName/>");
-                        if (propertyGroup.Element("PluginRequire") is { } require)
-                            meta.Require = require.Value.Split(';');
-                        else
-                            meta.Lang = new string[] {  };
+                        
                         if (propertyGroup.Element("PluginLang") is { } lang)
-                            meta.Lang = lang.Value.Split(';');
+                        {
+                            var temp = lang.Value.Split(';');
+                            for(int i = 0;i < temp.Length; i++)
+                            {
+                                temp[i] = @$"""{temp[i]}""";
+                            }
+                            meta.Lang = temp;
+                        }
                         else
-                            meta.Lang = new string[] {"zh-CN" };
+                            meta.Lang = new string[] { @"""zh-CN""" };
                         if (propertyGroup.Element("Authors") is { } author)
                             meta.Author = author.Value;
                         else
@@ -112,8 +129,8 @@ namespace ShadowViewer
     ""{meta.WebUri}"",
     ""{meta.Logo}"",
     ""{meta.MinVersion}"", 
-    new []{{""{String.Join(",", meta.Require)}""}},
-    new []{{""{String.Join(",", meta.Lang)}""}})";
+    new string[]{{{GetRequire(context)}}},
+    new string[]{{{String.Join(",", meta.Lang)}}})";
                         return res;
                     }
                     throw new Exception("未在当前项目的.csproj文件中找到PropertyGroup");
