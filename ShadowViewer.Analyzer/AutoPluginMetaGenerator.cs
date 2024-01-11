@@ -6,7 +6,7 @@ using System.Xml.Linq;
 namespace ShadowViewer
 {
     [Generator]
-    public class AutoPluginMetaGenerator : ISourceGenerator
+    internal class AutoPluginMetaGenerator : ISourceGenerator
     {
         static void LogError(GeneratorExecutionContext context,Exception exception)
         {
