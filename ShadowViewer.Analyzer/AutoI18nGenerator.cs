@@ -70,14 +70,15 @@ namespace ShadowViewer.Analyzer
             }
             var resws = GetReswDatas(context);
             string keys = string.Empty;
+            string i18ns = string.Empty;
             
             if (resws.Count > 0)
             {
                 var keyList = new List<string>();
+                var i18nList = new List<string>();
                 foreach (var resw in resws)
                 {
                     List<string> r = new();
-                    string comments = string.Empty;
                     foreach(var x in resw.Value)
                     {
                         var a = $"{x.Country}:{x.Value}";
@@ -87,15 +88,20 @@ namespace ShadowViewer.Analyzer
                         }
                         r.Add(a);
                     }
-                    var enums = string.Join("\n        ///",r);
-                    var s = $@"
+                    var enums = string.Join("\n        ///",r); 
+                    keyList.Add($@"
         /// <summary>
         /// {enums}
         /// </summary>
-        {resw.Key}";
-                    keyList.Add(s);
+        {resw.Key}");
+                    i18nList.Add($@"
+        /// <summary>
+        /// {enums}
+        /// </summary>
+        public static string {resw.Key} => ResourcesHelper.GetString(ResourceKey.{resw.Key});");
                 }
                 keys = string.Join(",", keyList);
+                i18ns = string.Join("", i18nList);
             }
             var reswEnumCode = $@"
 namespace {currentNamespace}.Enums
@@ -107,42 +113,9 @@ namespace {currentNamespace}.Enums
 }}";
             context.AddSource($"ResourceKey.g.cs", reswEnumCode);
             string? resourcesHelperCode;
-            if (isPlugin)
+            if (isPlugin || isCore)
             {
                 resourcesHelperCode = $@"
-using CustomExtensions.WinUI;
-using Windows.ApplicationModel.Resources.Core;
-using {currentNamespace}.Enums;
-using System;
-
-namespace {currentNamespace}.Helpers
-{{
-    internal static class ResourcesHelper
-    {{
-        private static readonly ResourceMap ResourceManager;
-        static ResourcesHelper()
-        {{
-            var map = ApplicationExtensionHost.GetResourceMapForAssembly();
-            if (map is not null) ResourceManager = map;
-            else
-                throw new NotImplementedException();
-        }}
-        public static string GetString(string key) 
-        {{
-            return ResourceManager.GetValue(key).ValueAsString;
-        }}
-        public static string GetString(ResourceKey key)
-        {{
-            return GetString(key.ToString());
-        }}
-    }}
-}}";
-            }
-            else
-            {
-                if (isCore)
-                {
-                    resourcesHelperCode = $@"
 using {currentNamespace}.Enums;
 using Microsoft.Windows.ApplicationModel.Resources;
 
@@ -153,7 +126,7 @@ namespace {currentNamespace}.Helpers
         private static readonly ResourceManager resourceManager = new();
         public static string GetString(string key)
         {{
-            return resourceManager.MainResourceMap.GetValue(""ShadowViewer.Core/Resources/"" + key).ValueAsString;
+            return resourceManager.MainResourceMap.GetValue(""{(isCore? "ShadowViewer.Core" : currentNamespace)}/Resources/"" + key).ValueAsString;
         }}
         public static string GetString(ResourceKey key)
         {{
@@ -161,9 +134,9 @@ namespace {currentNamespace}.Helpers
         }}
     }}
 }}";
-                }
-                else
-                {
+            }
+            else
+            { 
                     resourcesHelperCode = $@"
 using {currentNamespace}.Enums;
 using Microsoft.Windows.ApplicationModel.Resources;
@@ -183,9 +156,23 @@ namespace {currentNamespace}.Helpers
         }}
     }}
 }}";
-                }
+                
             }
             context.AddSource($"ResourcesHelper.g.cs", resourcesHelperCode);
+            var i18nCode = $@"
+using {currentNamespace}.Enums;
+namespace {currentNamespace}.Helpers
+{{
+    /// <summary>
+    /// 国际化
+    /// </summary>
+    internal static class I18N
+    {{
+        {i18ns}
+    }}
+}}";
+            context.AddSource($"I18N.g.cs", i18nCode);
+
             var localeExtensionCode = $@"
 using Microsoft.UI.Xaml.Markup;
 using {currentNamespace}.Helpers;
