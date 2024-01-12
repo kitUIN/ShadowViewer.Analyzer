@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Text;
 using System.Xml.Linq;
 
-namespace ShadowViewer.Analyzer
+namespace ShadowViewer.Analyzer.Models
 {
- 
+
     internal class ReswValue
     {
         public string Country { get; set; } = string.Empty;
         public string Value { get; set; } = string.Empty;
-        public string? Comment { get; set; } 
+        public string? Comment { get; set; }
     }
 }

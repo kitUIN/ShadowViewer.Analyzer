@@ -1,4 +1,4 @@
-﻿namespace ShadowViewer.Analyzer
+﻿namespace ShadowViewer.Analyzer.Models
 {
     internal class MetaYaml
     {

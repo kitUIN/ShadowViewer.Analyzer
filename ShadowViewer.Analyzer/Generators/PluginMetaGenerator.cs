@@ -1,14 +1,14 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using ShadowViewer.Analyzer;
+using ShadowViewer.Analyzer.Models;
 using System.Xml.Linq;
-namespace ShadowViewer
+namespace ShadowViewer.Analyzer.Generators
 {
     [Generator]
-    internal class AutoPluginMetaGenerator : ISourceGenerator
+    internal class PluginMetaGenerator : ISourceGenerator
     {
-        static void LogError(GeneratorExecutionContext context,Exception exception)
+        static void LogError(GeneratorExecutionContext context, Exception exception)
         {
             DiagnosticDescriptor InvalidXmlWarning = new DiagnosticDescriptor(id: "Error",
                                                                                        title: "Code Generator Error",
@@ -16,7 +16,7 @@ namespace ShadowViewer
                                                                                        category: "CodeGenerator",
                                                                                        DiagnosticSeverity.Error,
                                                                                        isEnabledByDefault: true);
-            context.ReportDiagnostic(Diagnostic.Create(InvalidXmlWarning, Location.None, "[插件元数据生成器]"+exception.Message));
+            context.ReportDiagnostic(Diagnostic.Create(InvalidXmlWarning, Location.None, "[插件元数据生成器]" + exception.Message));
         }
         static string GetMinVersion(GeneratorExecutionContext context)
         {
@@ -32,13 +32,13 @@ namespace ShadowViewer
         {
             var packageReference = context.Compilation.ReferencedAssemblyNames.Where(x => x.Name.StartsWith("ShadowViewer.Plugin."));
             var requires = new List<string>();
-            foreach(var package in packageReference)
+            foreach (var package in packageReference)
             {
                 var v = package.Version;
                 var name = package.Name.Replace("ShadowViewer.Plugin.", "");
                 requires.Add(@$"""{name}={v.Major}.{v.Minor}.{v.Build}.{v.Revision}""");
             }
-            return string.Join( ";", requires);
+            return string.Join(";", requires);
         }
         /// <summary>
         /// 获取核心的版本号
@@ -64,7 +64,7 @@ namespace ShadowViewer
             }
             throw new Exception("缺少ShadowViewer.Core.csproj文件");
         }
-        
+
         static string GetMeta(GeneratorExecutionContext context)
         {
             foreach (AdditionalText file in context.AdditionalFiles)
@@ -74,18 +74,18 @@ namespace ShadowViewer
                     var doc = XDocument.Load(file.Path);
                     var fileName = Path.GetFileName(file.Path);
                     var meta = new MetaYaml();
-                    if(doc.Root.Element("PropertyGroup") is { } propertyGroup)
+                    if (doc.Root.Element("PropertyGroup") is { } propertyGroup)
                     {
                         if (propertyGroup.Element("Version") is { } version)
                         {
-                            if(version.Value.Split('.').Length != 4) 
+                            if (version.Value.Split('.').Length != 4)
                                 throw new Exception($"{fileName}文件中插件元数据版本号必须为<Version>{{Major}}.{{Minor}}.{{Build}}.{{Revision}}<Version/>");
                             meta.Version = version.Value;
                         }
                         else
                             throw new Exception($"{fileName}文件中缺少插件元数据<Version><Version/>");
                         if (propertyGroup.Element("PackageId") is { } id)
-                            meta.Id = id.Value.Replace("ShadowViewer.Plugin.","");
+                            meta.Id = id.Value.Replace("ShadowViewer.Plugin.", "");
                         else
                             throw new Exception(@$"{fileName}文件中缺少插件元数据<PackageId>ShadowViewer.Plugin.{{插件id}}<PackageId/>");
                         if (propertyGroup.Element("PluginLogo") is { } logo)
@@ -96,11 +96,11 @@ namespace ShadowViewer
                             meta.Name = name.Value;
                         else
                             throw new Exception($"{fileName}文件中缺少插件元数据<PluginName><PluginName/>");
-                        
+
                         if (propertyGroup.Element("PluginLang") is { } lang)
                         {
                             var temp = lang.Value.Split(';');
-                            for(int i = 0;i < temp.Length; i++)
+                            for (int i = 0; i < temp.Length; i++)
                             {
                                 temp[i] = @$"""{temp[i]}""";
                             }
@@ -130,7 +130,7 @@ namespace ShadowViewer
     ""{meta.Logo}"",
     ""{meta.MinVersion}"", 
     new string[]{{{GetRequire(context)}}},
-    new string[]{{{String.Join(",", meta.Lang)}}})";
+    new string[]{{{string.Join(",", meta.Lang)}}})";
                         return res;
                     }
                     throw new Exception("未在当前项目的.csproj文件中找到PropertyGroup");
@@ -147,13 +147,13 @@ namespace ShadowViewer
         {
             try
             {
-                
+
                 // Get the compilation object
                 var compilation = context.Compilation;
 
                 // Get the symbol for the Serializable attribute
-                var serializableSymbol = compilation.GetTypeByMetadataName("ShadowViewer.Plugins.AutoPluginMetaAttribute");
-                var coreVersionSymbol = compilation.GetTypeByMetadataName("ShadowViewer.Plugins.AutoCoreVersionAttribute");
+                var serializableSymbol = compilation.GetTypeByMetadataName("ShadowViewer.Analyzer.Attributes.AutoPluginMetaAttribute");
+                var coreVersionSymbol = compilation.GetTypeByMetadataName("ShadowViewer.Analyzer.Attributes.AutoCoreVersionAttribute");
 
                 // Loop through the syntax trees in the compilation
                 foreach (var tree in compilation.SyntaxTrees)
@@ -192,12 +192,12 @@ namespace {classSymbol.ContainingNamespace.ToDisplayString()}
                             // Add the generated code to the compilation
 
                             context.AddSource($"{classSymbol.Name}.g.cs", code);
-                            
+
                         }
-                        
+
                     }
 
-                    foreach(var it in interfaces)
+                    foreach (var it in interfaces)
                     {
                         var interfaceSymbol = model.GetDeclaredSymbol(it);
                         if (interfaceSymbol.GetAttributes().Any(a => a.AttributeClass.Equals(coreVersionSymbol, SymbolEqualityComparer.Default)))
@@ -222,11 +222,11 @@ namespace {interfaceSymbol.ContainingNamespace.ToDisplayString()}
                     }
                 }
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 LogError(context, e);
             }
-            
+
         }
 
         public void Initialize(GeneratorInitializationContext context)

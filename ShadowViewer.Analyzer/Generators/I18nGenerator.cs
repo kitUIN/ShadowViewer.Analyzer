@@ -1,33 +1,19 @@
 ﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Text;
+using ShadowViewer.Analyzer.Models;
 using System.Xml.Linq;
 
-namespace ShadowViewer.Analyzer
+namespace ShadowViewer.Analyzer.Generators
 {
     /// <summary>
     /// 自动加载I18N相关类
     /// </summary>
     [Generator]
-    internal class AutoI18nGenerator : ISourceGenerator
+    internal class I18nGenerator : ISourceGenerator
     {
-        static void LogError(GeneratorExecutionContext context, Exception exception)
-        {
-            DiagnosticDescriptor InvalidXmlWarning = new DiagnosticDescriptor(id: "Error",
-                                                                                       title: "Code Generator Error",
-                                                                                       messageFormat: "{0}",
-                                                                                       category: "CodeGenerator",
-                                                                                       DiagnosticSeverity.Error,
-                                                                                       isEnabledByDefault: true);
-            context.ReportDiagnostic(Diagnostic.Create(InvalidXmlWarning, Location.None, "[国际化生成器]" + exception.Message));
-        }
+        
         static Dictionary<string, List<ReswValue>> GetReswDatas(GeneratorExecutionContext context)
         {
-            var  reswDatas = new Dictionary<string, List<ReswValue>>();
+            var reswDatas = new Dictionary<string, List<ReswValue>>();
             foreach (AdditionalText file in context.AdditionalFiles)
             {
                 if (Path.GetExtension(file.Path).Equals(".resw", StringComparison.OrdinalIgnoreCase))
@@ -36,7 +22,7 @@ namespace ShadowViewer.Analyzer
                     var doc = XDocument.Load(file.Path);
                     var datas = doc.Root.Elements("data");
                     foreach (var data in datas)
-                    { 
+                    {
                         var name = data.Attribute("name");
                         if (name == null) continue;
                         var comment = data.Element("comment");
@@ -71,7 +57,7 @@ namespace ShadowViewer.Analyzer
             var resws = GetReswDatas(context);
             string keys = string.Empty;
             string i18ns = string.Empty;
-            
+
             if (resws.Count > 0)
             {
                 var keyList = new List<string>();
@@ -79,7 +65,7 @@ namespace ShadowViewer.Analyzer
                 foreach (var resw in resws)
                 {
                     List<string> r = new();
-                    foreach(var x in resw.Value)
+                    foreach (var x in resw.Value)
                     {
                         var a = $"{x.Country}:{x.Value}";
                         if (x.Comment != null)
@@ -88,7 +74,7 @@ namespace ShadowViewer.Analyzer
                         }
                         r.Add(a);
                     }
-                    var enums = string.Join("\n        ///",r); 
+                    var enums = string.Join("\n        ///", r);
                     keyList.Add($@"
         /// <summary>
         /// {enums}
@@ -126,7 +112,7 @@ namespace {currentNamespace}.Helpers
         private static readonly ResourceManager resourceManager = new();
         public static string GetString(string key)
         {{
-            return resourceManager.MainResourceMap.GetValue(""{(isCore? "ShadowViewer.Core" : currentNamespace)}/Resources/"" + key).ValueAsString;
+            return resourceManager.MainResourceMap.GetValue(""{(isCore ? "ShadowViewer.Core" : currentNamespace)}/Resources/"" + key).ValueAsString;
         }}
         public static string GetString(ResourceKey key)
         {{
@@ -136,8 +122,8 @@ namespace {currentNamespace}.Helpers
 }}";
             }
             else
-            { 
-                    resourcesHelperCode = $@"
+            {
+                resourcesHelperCode = $@"
 using {currentNamespace}.Enums;
 using Microsoft.Windows.ApplicationModel.Resources;
 
@@ -156,7 +142,7 @@ namespace {currentNamespace}.Helpers
         }}
     }}
 }}";
-                
+
             }
             context.AddSource($"ResourcesHelper.g.cs", resourcesHelperCode);
             var i18nCode = $@"
