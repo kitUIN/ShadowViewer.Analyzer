@@ -1,16 +1,11 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System;
-using System.Collections.Generic;
-using System.Security.Claims;
-using System.Text;
-using ShadowViewer.Analyzer;
-using ShadowViewer.Analyzer.Attributes;
-using System.Diagnostics;
+using ShadowViewer.Analyzer.Model;
+
 namespace ShadowViewer.Analyzer.Generators
 {
     [Generator]
-    internal class DIGenerator : ISourceGenerator
+    internal class DiGenerator : ISourceGenerator
     {
         public void Execute(GeneratorExecutionContext context)
         {
@@ -18,7 +13,7 @@ namespace ShadowViewer.Analyzer.Generators
             try
             {
                 var compilation = context.Compilation;
-                var diSymbol = compilation.GetTypeByMetadataName("ShadowViewer.Analyzer.Attributes.AutoDIAttribute");
+                var diSymbol = compilation.GetTypeByMetadataName("ShadowViewer.Analyzer.Attributes.AutoDiAttribute");
                 foreach (var tree in compilation.SyntaxTrees)
                 {
                     var model = compilation.GetSemanticModel(tree);
@@ -29,67 +24,29 @@ namespace ShadowViewer.Analyzer.Generators
                         var da = classSymbol!.GetAttributes().FirstOrDefault(a => a!.AttributeClass!.Equals(diSymbol, SymbolEqualityComparer.Default));
                         if (classSymbol is not null & da is not null)
                         {
-                            var b = da!.ConstructorArguments.Select(x => (bool)x.Value).ToList();
-                            string p = "";
-                            string init = "";
+                            var b = da!.ConstructorArguments.Select(x => (bool)x.Value!).ToList();
+                            var p = "";
+                            var init = "";
                             List<string> constructor = new();
-                            for (int i = 0; i < 5; i++)
+                            var di = new List<Di>
                             {
-                                switch (i)
-                                {
-                                    case 1:
-                                        if (b[i])
-                                        {
-                                            p += $@"
-        protected ICallableService Caller {{ get; }}";
-                                            init += $@"
-            Caller = caller;";
-                                            constructor.Add("ICallableService caller");
-                                        }
-                                        break;
-                                    case 2:
-                                        if (b[i])
-                                        {
-                                            p += $@"
-        protected ISqlSugarClient Db {{ get; }}"; 
-                                            init += $@"
-            Db = db;";
-                                            constructor.Add("ISqlSugarClient db");
-                                        }
-                                        break;
-                                    case 3:
-                                        if (b[i])
-                                        {
-                                            p += $@"
-        protected CompressService CompressServices {{ get; }}";
-                                            init += $@"
-            CompressServices = compressService;";
-                                            constructor.Add("CompressService compressService");
-                                        }
-                                        break;
-                                    case 0:
-                                        if (b[i])
-                                        {
-                                            p += $@"
-        protected IPluginService PluginService {{ get; }}";
-                                            init += $@"
-            PluginService = pluginService;";
-                                            constructor.Add("IPluginService pluginService");
-                                        }
-                                        break;
-                                    case 4:
-                                        if (b[i])
-                                        {
-                                            p += $@"
-        protected ILogger Logger {{ get; }}";
-                                            init += $@"
-            Logger = logger;";
-                                            constructor.Add("ILogger logger");
-                                        }
-                                        break;
-                                }
+                                new("ICallableService","Caller","caller"),
+                                new("ISqlSugarClient","Db","db"),
+                                new("CompressService","Compressor","compressService"),
+                                new("PluginLoader","PluginService","pluginService"),
+                                new("ILogger","Logger","logger"),
+                                new("ResponderService","ResponderService","responderService"),
+                            };
+                            for (var i = 0; i < di.Count; i++)
+                            {
+                                if (!b[i]) continue;
+                                p += $@"
+        public {di[i].ClassTypeName} {di[i].ClassName} {{ get; }}";
+                                init += $@"
+            {di[i].ClassName} = {di[i].ConstructorName};";
+                                constructor.Add($"{di[i].ClassTypeName} {di[i].ConstructorName}");
                             }
-                            string ac = "public";
+                            var ac = "public";
                             switch(classSymbol!.DeclaredAccessibility)
                             {
                                 case Accessibility.Internal:
@@ -98,11 +55,17 @@ namespace ShadowViewer.Analyzer.Generators
                                 case Accessibility.Private:
                                     ac = "private";
                                     break;
+                                case Accessibility.NotApplicable:
+                                case Accessibility.ProtectedAndInternal:
+                                case Accessibility.Protected:
+                                case Accessibility.ProtectedOrInternal:
+                                case Accessibility.Public:
                                 default:
                                     break;
                             }
                             var code = $@"
 using ShadowViewer.Services;
+using ShadowViewer;
 using Serilog;
 using SqlSugar;
 namespace {classSymbol!.ContainingNamespace.ToDisplayString()}
