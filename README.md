@@ -1,5 +1,4 @@
 # ShadowViewer.Analyzer
 
-Ä¿Ç°Ìá¹©Á½¸ö¹¦ÄÜ
-- ÔÚ `ShadowViewer.Core` ±àÒë¹ý³ÌÖÐ×Ô¶¯Éú³É `IPluginService.MinVersion` ²å¼þºËÐÄ×îµÍ°æ±¾Ö§³Ö
-- ÔÚ ºóÐøµÄ²å¼þµÄ ±àÒë¹ý³ÌÖÐ´Ó `.csproj` ÎÄ¼þÖÐ×Ô¶¯Éú³É `²å¼þÔªÊý¾Ý`
+
+- ä½¿ç”¨`AutoDi`ç‰¹æ€§ è¿›è¡Œè‡ªåŠ¨ä¾èµ–æ³¨å…¥
