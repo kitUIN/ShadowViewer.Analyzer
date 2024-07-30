@@ -30,17 +30,20 @@ namespace ShadowViewer.Analyzer.Generators
                             List<string> constructor = new();
                             var di = new List<Di>
                             {
-                                new("ICallableService","Caller","caller"),
-                                new("ISqlSugarClient","Db","db"),
-                                new("CompressService","Compressor","compressService"),
-                                new("PluginLoader","PluginService","pluginService"),
-                                new("ILogger","Logger","logger"),
-                                new("ResponderService","ResponderService","responderService"),
+                                new("PluginLoader","PluginService","pluginService","插件服务"),
+                                new("ICallableService","Caller","caller","触发器服务"),
+                                new("ISqlSugarClient","Db","db","数据库服务"),
+                                new("CompressService","Compressor","compressService","解压缩服务"),
+                                new("ILogger","Logger","logger","日志服务"),
+                                new("ResponderService","ResponderService","responderService","响应器服务"),
                             };
                             for (var i = 0; i < di.Count; i++)
                             {
                                 if (!b[i]) continue;
                                 p += $@"
+        /// <summary>
+        /// {di[i].Comment}
+        /// </summary>
         public {di[i].ClassTypeName} {di[i].ClassName} {{ get; }}";
                                 init += $@"
             {di[i].ClassName} = {di[i].ConstructorName};";
