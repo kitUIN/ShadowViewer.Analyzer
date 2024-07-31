@@ -36,6 +36,7 @@ namespace ShadowViewer.Analyzer.Generators
                                 new("CompressService","Compressor","compressService","解压缩服务"),
                                 new("ILogger","Logger","logger","日志服务"),
                                 new("ResponderService","ResponderService","responderService","响应器服务"),
+                                new("INotifyService","Notifier","notifyService","通知服务"),
                             };
                             for (var i = 0; i < di.Count; i++)
                             {
