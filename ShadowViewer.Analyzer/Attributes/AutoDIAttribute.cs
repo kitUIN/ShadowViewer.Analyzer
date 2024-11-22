@@ -35,17 +35,24 @@ namespace ShadowViewer.Analyzer.Attributes
         /// 是否启用触发器服务类
         /// </summary>
         public bool Responder { get; }
+        /// <summary>
+        /// 是否启用通知服务类
+        /// </summary>
+        public bool Notify { get; }
 
         /// <summary>
         /// 自动载入DI
         /// </summary>
         /// <param name="plugin">是否启用插件服务类</param>
-        /// <param name="caller">是否启用事件通知服务类</param>
+        /// <param name="caller">是否启用触发器服务类</param>
         /// <param name="db">是否启用数据库服务类</param>
         /// <param name="compress">是否启用压缩服务类</param>
         /// <param name="logger">是否启用日志服务类</param>
-        /// <param name="responder">是否启用触发器服务类</param>
-        public AutoDiAttribute(bool plugin = true, bool caller = true, bool db = true, bool compress = true, bool logger = true, bool responder = true)
+        /// <param name="responder">是否启用响应器服务类</param>
+        /// <param name="notify">是否启用通知服务类</param>
+        public AutoDiAttribute(bool plugin = true, bool caller = true, bool db = true, 
+            bool compress = true, bool logger = true, bool responder = true,
+            bool notify = true)
         {
             Plugin = plugin;
             Caller = caller;
@@ -53,6 +60,7 @@ namespace ShadowViewer.Analyzer.Attributes
             Compress = compress;
             Logger = logger;
             Responder = responder;
+            Notify = notify;
         }
     }
 }
