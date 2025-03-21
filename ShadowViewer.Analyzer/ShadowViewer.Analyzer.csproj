@@ -19,6 +19,7 @@
 		<PackageTags>kitUIN;wasdk;ShadowViewer;winui</PackageTags>
 		<PackageOutputPath>..\..\..\NugetPackages</PackageOutputPath>
 		<NoWarn>MSB3277</NoWarn>
+		<LangVersion>12</LangVersion>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 	</PropertyGroup>
 

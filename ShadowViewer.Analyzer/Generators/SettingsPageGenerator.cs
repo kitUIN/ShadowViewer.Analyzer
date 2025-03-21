@@ -1,18 +1,32 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using ShadowViewer.Analyzer.Attributes;
 using ShadowViewer.Analyzer.Model;
+using ShadowViewer.Analyzer.Receivers;
 
 namespace ShadowViewer.Analyzer.Generators
 {
     [Generator]
-    internal class DiGenerator : ISourceGenerator
+    internal class SettingsPageGenerator : ISourceGenerator
     {
         public void Execute(GeneratorExecutionContext context)
         {
+            var logger = new Logger.Logger("SettingsPageGenerator", context);
+            if (context.SyntaxReceiver is not ClassSyntaxReceiver receiver) return;
+            if (receiver.Classes.Count == 0) return;
+
             try
             {
                 var compilation = context.Compilation;
-                var diSymbol = compilation.GetTypeByMetadataName("ShadowViewer.Analyzer.Attributes.AutoDiAttribute");
+                foreach (var classDeclaration in receiver.Classes)
+                {
+                    var model = context.Compilation.GetSemanticModel(classDeclaration.SyntaxTree);
+
+                    if (model.GetDeclaredSymbol(classDeclaration) is not INamedTypeSymbol classSymbol)
+                        continue;
+                }
+
+                var diSymbol = compilation.GetTypeByMetadataName(typeof(SettingsPageAttribute)!.FullName!);
                 foreach (var tree in compilation.SyntaxTrees)
                 {
                     var model = compilation.GetSemanticModel(tree);
@@ -97,20 +111,11 @@ namespace {classSymbol!.ContainingNamespace.ToDisplayString()}
             }
         }
 
-        static void LogError(GeneratorExecutionContext context, Exception exception)
-        {
-            DiagnosticDescriptor InvalidXmlWarning = new DiagnosticDescriptor(id: "Error",
-                title: "Code Generator Error",
-                messageFormat: "{0}",
-                category: "CodeGenerator",
-                DiagnosticSeverity.Error,
-                isEnabledByDefault: true);
-            context.ReportDiagnostic(
-                Diagnostic.Create(InvalidXmlWarning, Location.None, "[国际化生成器]" + exception.Message));
-        }
 
+        /// <inheritdoc />
         public void Initialize(GeneratorInitializationContext context)
         {
+            context.RegisterForSyntaxNotifications(() => new ClassSyntaxReceiver());
         }
     }
 }

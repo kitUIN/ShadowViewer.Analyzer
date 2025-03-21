@@ -2,26 +2,29 @@
 
 namespace ShadowViewer.Analyzer.Logger;
 
-internal static class Logger
+internal class Logger(string category, GeneratorExecutionContext context)
 {
-    public static void Error(GeneratorExecutionContext context, string message)
+
+    public void Log(string id, string title, string message, DiagnosticSeverity severity)
     {
-        DiagnosticDescriptor InvalidXmlWarning = new DiagnosticDescriptor(id: "Error",
-            title: "Code Generator Error",
-            messageFormat: "{0}",
-            category: "CodeGenerator",
-            DiagnosticSeverity.Error,
+        var invalidXmlWarning = new DiagnosticDescriptor(id: id,
+            title: title,
+            messageFormat: "[{0}] {1}",
+            category: category,
+            severity,
             isEnabledByDefault: true);
-        context.ReportDiagnostic(Diagnostic.Create(InvalidXmlWarning, Location.None, "[国际化生成器]" + message));
+        context.ReportDiagnostic(Diagnostic.Create(invalidXmlWarning, Location.None, category, message));
     }
-    public static void Info(GeneratorExecutionContext context, string message)
+    public void Info(string id, string message)
     {
-        DiagnosticDescriptor InvalidXmlWarning = new DiagnosticDescriptor(id: "Info",
-            title: "Code Generator Info",
-            messageFormat: "{0}",
-            category: "CodeGenerator",
-            DiagnosticSeverity.Info,
-            isEnabledByDefault: true);
-        context.ReportDiagnostic(Diagnostic.Create(InvalidXmlWarning, Location.None, "[国际化生成器]" + message));
+        Log(id, $"{category} Info", message, DiagnosticSeverity.Info);
+    }
+    public void Warning(string id, string message)
+    {
+        Log(id, $"{category} Warning", message, DiagnosticSeverity.Warning);
+    }
+    public void Error(string id, string message)
+    {
+        Log(id, $"{category} Error", message, DiagnosticSeverity.Error);
     }
 }
